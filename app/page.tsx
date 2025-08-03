@@ -2,25 +2,54 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { Upload, FileText, Zap, CheckCircle, Camera } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import { PolicyData } from "@/lib/policyExtractor"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 export default function MyPolicyScanLanding() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
-  const [showResults, setShowResults] = useState(false)
+  const [showResultsModal, setShowResultsModal] = useState(false)
+  const [policyData, setPolicyData] = useState<PolicyData | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
-  const handleFileUpload = (file: File) => {
+  const handleFileUpload = async (file: File) => {
     setUploadedFile(file)
     setIsProcessing(true)
+    setError(null)
+    setPolicyData(null)
 
-    // Simulate processing
-    setTimeout(() => {
+    const formData = new FormData()
+    formData.append("policyImage", file)
+
+    try {
+      const response = await fetch("/api/upload-policy", {
+        method: "POST",
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Something went wrong during analysis.")
+      }
+
+      const data: PolicyData = await response.json()
+      setPolicyData(data)
+      setShowResultsModal(true) // Open the modal on success
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
       setIsProcessing(false)
-      setShowResults(true)
-    }, 3000)
+    }
   }
 
   const handleDrop = (e: React.DragEvent) => {
@@ -62,8 +91,20 @@ export default function MyPolicyScanLanding() {
             />
           </div>
 
-          {/* Results Preview */}
-          {showResults && <ResultsPreview />}
+          {/* Error Message */}
+          {error && (
+            <div className="mt-4 text-red-500 bg-red-900/20 p-4 rounded-md">
+              <p className="font-bold">Analysis Failed</p>
+              <p className="text-sm">{error}</p>
+            </div>
+          )}
+
+          {/* Results Modal */}
+          <ResultsModal
+            isOpen={showResultsModal}
+            onClose={() => setShowResultsModal(false)}
+            data={policyData}
+          />
         </div>
       </section>
 
@@ -156,6 +197,24 @@ function UploadBox({
   onDrop: (e: React.DragEvent) => void
   onFileSelect: (e: React.ChangeEvent<HTMLInputElement>) => void
 }) {
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleChooseFile = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.removeAttribute("capture")
+      fileInputRef.current.accept = ".pdf,.jpg,.jpeg,.png"
+      fileInputRef.current.click()
+    }
+  }
+
+  const handleTakePhoto = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.setAttribute("capture", "environment")
+      fileInputRef.current.accept = "image/*"
+      fileInputRef.current.click()
+    }
+  }
+
   return (
     <Card className="bg-gray-900 border-gray-700 p-8 max-w-md mx-auto">
       {isProcessing ? (
@@ -185,18 +244,22 @@ function UploadBox({
           <div className="space-y-4">
             <input
               type="file"
-              accept=".pdf,.jpg,.jpeg,.png"
+              ref={fileInputRef}
               onChange={onFileSelect}
               className="hidden"
               id="file-upload"
             />
-            <label htmlFor="file-upload">
-              <Button className="bg-[#ADFF2F] text-black hover:bg-[#9AE234] font-bold">Choose File</Button>
-            </label>
+            <Button onClick={handleChooseFile} className="bg-[#ADFF2F] text-black hover:bg-[#9AE234] font-bold">
+              Choose File
+            </Button>
 
             <div className="text-gray-400 text-sm">or</div>
 
-            <Button variant="outline" className="border-gray-600 text-white hover:bg-gray-800 bg-transparent">
+            <Button
+              onClick={handleTakePhoto}
+              variant="outline"
+              className="border-gray-600 text-white hover:bg-gray-800 bg-transparent"
+            >
               <Camera className="w-4 h-4 mr-2" />
               Take a Photo
             </Button>
@@ -207,39 +270,35 @@ function UploadBox({
   )
 }
 
-// Results Preview Component
-function ResultsPreview() {
+// Results Modal Component
+function ResultsModal({
+  isOpen,
+  onClose,
+  data,
+}: {
+  isOpen: boolean
+  onClose: () => void
+  data: PolicyData | null
+}) {
+  if (!isOpen || !data) {
+    return null
+  }
+
   return (
-    <Card className="bg-gray-900 border-gray-700 p-8 max-w-2xl mx-auto mt-8">
-      <div className="space-y-6">
-        <div className="text-center">
-          <CheckCircle className="w-12 h-12 mx-auto text-[#ADFF2F] mb-4" />
-          <h3 className="text-xl font-bold mb-2">Policy Scanned Successfully</h3>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="bg-gray-900 border-gray-700 text-white">
+        <DialogHeader>
+          <DialogTitle>Policy Scan Results (Test)</DialogTitle>
+          <DialogDescription>
+            This is the raw JSON data extracted from your policy.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="mt-4 bg-black p-4 rounded-lg">
+          <pre className="text-sm text-gray-300 whitespace-pre-wrap">
+            {JSON.stringify(data, null, 2)}
+          </pre>
         </div>
-
-        <div className="bg-black p-6 rounded-lg space-y-4">
-          <div className="flex justify-between items-center">
-            <span className="text-gray-400">Current Policy:</span>
-            <span className="font-semibold">Aviva, £832/yr, Ford Focus</span>
-          </div>
-
-          <div className="flex justify-between items-center">
-            <span className="text-gray-400">Market Average:</span>
-            <span className="font-semibold">£620/yr</span>
-          </div>
-
-          <div className="border-t border-gray-700 pt-4">
-            <div className="flex justify-between items-center">
-              <span className="text-[#ADFF2F] font-bold">Potential Savings:</span>
-              <span className="text-[#ADFF2F] font-bold text-xl">£212/yr</span>
-            </div>
-          </div>
-        </div>
-
-        <Button className="w-full bg-[#ADFF2F] text-black hover:bg-[#9AE234] font-bold py-3">
-          Check Cheaper Quotes
-        </Button>
-      </div>
-    </Card>
+      </DialogContent>
+    </Dialog>
   )
 }
