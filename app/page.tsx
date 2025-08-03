@@ -12,11 +12,29 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer"
+import { useIsMobile } from "@/components/ui/use-mobile"
 
 export default function MyPolicyScanLanding() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const [showResultsModal, setShowResultsModal] = useState(false)
+  const [showAgeModal, setShowAgeModal] = useState(false)
+  const [confirmedPolicyData, setConfirmedPolicyData] = useState<PolicyData | null>(null)
   const [policyData, setPolicyData] = useState<PolicyData | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -68,8 +86,12 @@ export default function MyPolicyScanLanding() {
 
   const resetState = () => {
     setUploadedFile(null)
+    setIsProcessing(false)
     setShowResultsModal(false)
-    // We keep policyData and error for a moment for the modal to fade out
+    setShowAgeModal(false)
+    setPolicyData(null)
+    setConfirmedPolicyData(null)
+    setError(null)
   }
 
   return (
@@ -98,9 +120,15 @@ export default function MyPolicyScanLanding() {
 
           {/* Error Message */}
           {error && (
-            <div className="mt-4 text-red-500 bg-red-900/20 p-4 rounded-md">
-              <p className="font-bold">Analysis Failed</p>
-              <p className="text-sm">{error}</p>
+            <div className="mt-4 text-center bg-red-900/20 p-6 rounded-md">
+              <p className="font-bold text-red-400">Analysis Failed</p>
+              <p className="text-sm text-red-400/80 mt-1 mb-4">{error}</p>
+              <Button
+                variant="destructive"
+                onClick={resetState}
+              >
+                Start Over
+              </Button>
             </div>
           )}
 
@@ -109,6 +137,23 @@ export default function MyPolicyScanLanding() {
             isOpen={showResultsModal}
             onClose={resetState}
             data={policyData}
+            onConfirm={(confirmedData) => {
+              setConfirmedPolicyData(confirmedData)
+              setShowResultsModal(false)
+              setShowAgeModal(true)
+            }}
+          />
+
+          {/* Age Picker Modal */}
+          <AgePickerModal
+            isOpen={showAgeModal}
+            onClose={() => setShowAgeModal(false)}
+            onConfirm={(age) => {
+              console.log("Final Confirmed Data:", confirmedPolicyData)
+              console.log("Policyholder Age:", age)
+              setShowAgeModal(false)
+              resetState() // Reset the UI completely
+            }}
           />
         </div>
       </section>
@@ -280,15 +325,16 @@ function ResultsModal({
   isOpen,
   onClose,
   data,
+  onConfirm,
 }: {
   isOpen: boolean
   onClose: () => void
   data: PolicyData | null
+  onConfirm: (confirmedData: PolicyData) => void
 }) {
   const [editedData, setEditedData] = React.useState<PolicyData | null>(data)
 
   React.useEffect(() => {
-    // When the modal is opened with new data, reset the local state
     setEditedData(data)
   }, [data])
 
@@ -303,8 +349,9 @@ function ResultsModal({
   }
 
   const handleConfirm = () => {
-    console.log("Confirmed Data:", editedData) // Here's the final data
-    onClose()
+    if (editedData) {
+      onConfirm(editedData)
+    }
   }
 
   const handleReject = () => {
@@ -330,7 +377,7 @@ function ResultsModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="my-4 space-y-4 bg-black/30 p-4 rounded-md">
+        <div className="my-4 space-y-4 bg-black/30 p-4 rounded-md overflow-y-auto max-h-[60vh]">
           <EditableItem label="Registration" name="registrationNumber" value={editedData.registrationNumber} onChange={handleInputChange} />
           <EditableItem label="Insurer" name="insurerName" value={editedData.insurerName} onChange={handleInputChange} />
           <EditableItem label="Premium (£)" name="premiumAmount" value={editedData.premiumAmount} onChange={handleInputChange} type="number" />
@@ -342,11 +389,11 @@ function ResultsModal({
           <EditableItem label="Annual Mileage" name="annualMileage" value={editedData.annualMileage} onChange={handleInputChange} type="number" />
         </div>
 
-        <div className="flex justify-end space-x-4 mt-6">
-          <Button variant="destructive" onClick={handleReject}>
+        <div className="mt-6 grid grid-cols-2 gap-4">
+          <Button variant="destructive" onClick={handleReject} className="w-full">
             No, Start Over
           </Button>
-          <Button onClick={handleConfirm} className="bg-[#ADFF2F] text-black hover:bg-[#9AE234] font-bold">
+          <Button onClick={handleConfirm} className="w-full bg-[#ADFF2F] text-black hover:bg-[#9AE234] font-bold">
             Yes, This Is Correct
           </Button>
         </div>
@@ -384,5 +431,96 @@ function EditableItem({
         step={type === 'number' ? '0.01' : undefined}
       />
     </div>
+  )
+}
+
+function AgePickerModal({
+  isOpen,
+  onClose,
+  onConfirm,
+}: {
+  isOpen: boolean
+  onClose: () => void
+  onConfirm: (age: number) => void
+}) {
+  const [selectedAge, setSelectedAge] = React.useState<number | null>(null)
+
+  const handleConfirm = () => {
+    if (selectedAge) {
+      onConfirm(selectedAge)
+    }
+  }
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="bg-gray-900 border-gray-700 text-white sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>What is your age?</DialogTitle>
+          <DialogDescription>
+            Please select the age of the main policyholder. This helps us find accurate quotes.
+          </DialogDescription>
+        </DialogHeader>
+
+        <ResponsiveAgePicker selectedAge={selectedAge} onAgeChange={setSelectedAge} />
+
+        <div className="flex justify-end mt-4">
+          <Button onClick={handleConfirm} disabled={!selectedAge} className="w-full sm:w-auto bg-[#ADFF2F] text-black hover:bg-[#9AE234] font-bold">
+            Confirm Age & See Quotes
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function ResponsiveAgePicker({ selectedAge, onAgeChange }: { selectedAge: number | null, onAgeChange: (age: number) => void }) {
+  const isMobile = useIsMobile()
+  const ages = Array.from({ length: 85 }, (_, i) => 16 + i) // 16 to 100
+
+  if (isMobile) {
+    return (
+      <Drawer>
+        <DrawerTrigger asChild>
+          <Button variant="outline" className="w-full justify-start text-left font-normal bg-gray-800 border-gray-600">
+            {selectedAge ? `${selectedAge} years old` : "Select your age..."}
+          </Button>
+        </DrawerTrigger>
+        <DrawerContent className="bg-gray-900 text-white border-gray-800">
+          <DrawerHeader>
+            <DrawerTitle>Select Your Age</DrawerTitle>
+            <DrawerDescription>Choose the policyholder's age from the list below.</DrawerDescription>
+          </DrawerHeader>
+          <div className="p-4 overflow-y-auto h-60">
+            <div className="space-y-2">
+              {ages.map((age) => (
+                <Button
+                  key={age}
+                  variant={selectedAge === age ? "default" : "outline"}
+                  className={`w-full ${selectedAge === age ? 'bg-[#ADFF2F] text-black hover:bg-[#9AE234]' : 'bg-gray-800 border-gray-600 hover:bg-gray-700'}`}
+                  onClick={() => onAgeChange(age)}
+                >
+                  {age}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </DrawerContent>
+      </Drawer>
+    )
+  }
+
+  return (
+    <Select onValueChange={(value) => onAgeChange(parseInt(value))}>
+      <SelectTrigger className="w-full bg-gray-800 border-gray-600">
+        <SelectValue placeholder="Select age..." />
+      </SelectTrigger>
+      <SelectContent className="bg-gray-800 text-white">
+        {ages.map((age) => (
+          <SelectItem key={age} value={String(age)}>
+            {age}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   )
 }
