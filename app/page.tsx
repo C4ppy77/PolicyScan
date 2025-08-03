@@ -25,6 +25,7 @@ export default function MyPolicyScanLanding() {
   const handleFileUpload = async (file: File) => {
     setUploadedFile(file)
     setIsProcessing(true)
+    setShowResultsModal(false) // Close modal before new upload
     setError(null)
     setPolicyData(null)
 
@@ -67,6 +68,12 @@ export default function MyPolicyScanLanding() {
     }
   }
 
+  const resetState = () => {
+    setUploadedFile(null)
+    setShowResultsModal(false)
+    // We keep policyData and error for a moment for the modal to fade out
+  }
+
   return (
     <div className="min-h-screen bg-black text-white">
       {/* Hero Section */}
@@ -102,7 +109,7 @@ export default function MyPolicyScanLanding() {
           {/* Results Modal */}
           <ResultsModal
             isOpen={showResultsModal}
-            onClose={() => setShowResultsModal(false)}
+            onClose={resetState}
             data={policyData}
           />
         </div>
@@ -284,21 +291,62 @@ function ResultsModal({
     return null
   }
 
+  const handleConfirm = () => {
+    // For now, this just closes the modal.
+    // Later, this could navigate to the results/comparison page.
+    onClose()
+  }
+
+  const handleReject = () => {
+    // This should reset the state in the parent component.
+    // We'll call onClose for now, which also triggers a state reset.
+    onClose()
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-gray-900 border-gray-700 text-white">
+      <DialogContent className="bg-gray-900 border-gray-700 text-white max-w-lg">
         <DialogHeader>
-          <DialogTitle>Policy Scan Results (Test)</DialogTitle>
-          <DialogDescription>
-            This is the raw JSON data extracted from your policy.
+          <DialogTitle className="text-2xl text-center">Confirm Your Details</DialogTitle>
+          <DialogDescription className="text-center">
+            Please check the details extracted from your policy.
           </DialogDescription>
         </DialogHeader>
-        <div className="mt-4 bg-black p-4 rounded-lg">
-          <pre className="text-sm text-gray-300 whitespace-pre-wrap">
-            {JSON.stringify(data, null, 2)}
-          </pre>
+
+        <div className="my-4 space-y-3 bg-black/30 p-4 rounded-md">
+          <DataItem label="Registration" value={data.registrationNumber} />
+          <DataItem label="Insurer" value={data.insurerName} />
+          <DataItem label="Premium" value={`£${data.premiumAmount.toFixed(2)}`} />
+          <DataItem label="Vehicle" value={`${data.vehicleMake} ${data.vehicleModel} (${data.vehicleYear})`} />
+          <DataItem label="Renewal Date" value={new Date(data.renewalDate).toLocaleDateString("en-GB")} />
+          {data.noClaimsDiscount !== undefined && (
+            <DataItem label="No Claims" value={`${data.noClaimsDiscount} years`} />
+          )}
+          {data.annualMileage !== undefined && (
+            <DataItem label="Mileage" value={`${data.annualMileage?.toLocaleString()} miles`} />
+          )}
+        </div>
+
+        <div className="flex justify-end space-x-4 mt-6">
+          <Button variant="destructive" onClick={handleReject}>
+            No, Start Over
+          </Button>
+          <Button onClick={handleConfirm} className="bg-[#ADFF2F] text-black hover:bg-[#9AE234] font-bold">
+            Yes, This Is Correct
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
+  )
+}
+
+function DataItem({ label, value }: { label: string; value: string | number | undefined }) {
+  if (value === undefined) return null;
+
+  return (
+    <div className="flex justify-between items-center py-2 border-b border-gray-800 last:border-b-0">
+      <span className="text-gray-400">{label}</span>
+      <span className="font-semibold text-right">{value}</span>
+    </div>
   )
 }

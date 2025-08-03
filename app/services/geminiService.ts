@@ -20,7 +20,7 @@ Return the data as a single, minified JSON object and nothing else.
 
 - registrationNumber: The vehicle's registration number.
 - insurerName: The name of the insurance company.
-- premiumAmount: The total premium amount, as a number, without the '£' symbol.
+- premiumAmount: The total policy cost, as a number, without the '£' symbol. Look for phrases like 'Total Premium', 'Amount Payable', or 'Total Price'.
 - vehicleMake: The make of the vehicle (e.g., Ford).
 - vehicleModel: The model of the vehicle (e.g., Focus).
 - vehicleYear: The year the vehicle was manufactured.
