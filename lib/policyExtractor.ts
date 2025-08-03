@@ -23,6 +23,9 @@ export const PolicyDataSchema = z.object({
   
   // Gemini output for 'renewal_date' -> renewalDate
   renewalDate: z.string().datetime("Invalid date format, should be ISO string"),
+
+  // Gemini output for 'no_claims_discount' -> noClaimsDiscount
+  noClaimsDiscount: z.number().int().min(0, "No claims discount cannot be negative").optional(),
 });
 
 // The type can be inferred from the schema

@@ -25,6 +25,7 @@ Return the data as a single, minified JSON object and nothing else.
 - vehicleModel: The model of the vehicle (e.g., Focus).
 - vehicleYear: The year the vehicle was manufactured.
 - renewalDate: The policy renewal date, as a full ISO 8601 string (YYYY-MM-DDTHH:mm:ss.sssZ).
+- noClaimsDiscount: The number of years of no claims discount, as a number.
 
 Do not add any extra text, explanations, or markdown formatting around the JSON object.
 `;
