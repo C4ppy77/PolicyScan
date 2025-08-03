@@ -26,6 +26,9 @@ export const PolicyDataSchema = z.object({
 
   // Gemini output for 'no_claims_discount' -> noClaimsDiscount
   noClaimsDiscount: z.number().int().min(0, "No claims discount cannot be negative").optional(),
+
+  // Gemini output for 'annual_mileage' -> annualMileage
+  annualMileage: z.number().int().positive("Annual mileage must be a positive number").optional(),
 });
 
 // The type can be inferred from the schema
