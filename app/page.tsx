@@ -1,8 +1,6 @@
 "use client"
 
-import type React from "react"
-
-import { useState, useRef } from "react"
+import React, { useState, useRef } from "react"
 import { Upload, FileText, Zap, CheckCircle, Camera } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -287,44 +285,61 @@ function ResultsModal({
   onClose: () => void
   data: PolicyData | null
 }) {
-  if (!isOpen || !data) {
+  const [editedData, setEditedData] = React.useState<PolicyData | null>(data)
+
+  React.useEffect(() => {
+    // When the modal is opened with new data, reset the local state
+    setEditedData(data)
+  }, [data])
+
+  if (!isOpen || !editedData) {
     return null
   }
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, type } = e.target
+    const isNumber = type === 'number';
+    setEditedData(prev => prev ? { ...prev, [name]: isNumber ? parseFloat(value) || 0 : value } : null)
+  }
+
   const handleConfirm = () => {
-    // For now, this just closes the modal.
-    // Later, this could navigate to the results/comparison page.
+    console.log("Confirmed Data:", editedData) // Here's the final data
     onClose()
   }
 
   const handleReject = () => {
-    // This should reset the state in the parent component.
-    // We'll call onClose for now, which also triggers a state reset.
     onClose()
+  }
+
+  // Helper to format ISO date string to YYYY-MM-DD for the input
+  const formatDateForInput = (isoDate: string) => {
+    try {
+      return new Date(isoDate).toISOString().split('T')[0];
+    } catch {
+      return '';
+    }
   }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="bg-gray-900 border-gray-700 text-white max-w-lg">
         <DialogHeader>
-          <DialogTitle className="text-2xl text-center">Confirm Your Details</DialogTitle>
+          <DialogTitle className="text-2xl text-center">Confirm or Edit Your Details</DialogTitle>
           <DialogDescription className="text-center">
-            Please check the details extracted from your policy.
+            Please check and correct any details extracted from your policy.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="my-4 space-y-3 bg-black/30 p-4 rounded-md">
-          <DataItem label="Registration" value={data.registrationNumber} />
-          <DataItem label="Insurer" value={data.insurerName} />
-          <DataItem label="Premium" value={`£${data.premiumAmount.toFixed(2)}`} />
-          <DataItem label="Vehicle" value={`${data.vehicleMake} ${data.vehicleModel} (${data.vehicleYear})`} />
-          <DataItem label="Renewal Date" value={new Date(data.renewalDate).toLocaleDateString("en-GB")} />
-          {data.noClaimsDiscount !== undefined && (
-            <DataItem label="No Claims" value={`${data.noClaimsDiscount} years`} />
-          )}
-          {data.annualMileage !== undefined && (
-            <DataItem label="Mileage" value={`${data.annualMileage?.toLocaleString()} miles`} />
-          )}
+        <div className="my-4 space-y-4 bg-black/30 p-4 rounded-md">
+          <EditableItem label="Registration" name="registrationNumber" value={editedData.registrationNumber} onChange={handleInputChange} />
+          <EditableItem label="Insurer" name="insurerName" value={editedData.insurerName} onChange={handleInputChange} />
+          <EditableItem label="Premium (£)" name="premiumAmount" value={editedData.premiumAmount} onChange={handleInputChange} type="number" />
+          <EditableItem label="Vehicle Make" name="vehicleMake" value={editedData.vehicleMake} onChange={handleInputChange} />
+          <EditableItem label="Vehicle Model" name="vehicleModel" value={editedData.vehicleModel} onChange={handleInputChange} />
+          <EditableItem label="Vehicle Year" name="vehicleYear" value={editedData.vehicleYear} onChange={handleInputChange} type="number" />
+          <EditableItem label="Renewal Date" name="renewalDate" value={formatDateForInput(editedData.renewalDate)} onChange={handleInputChange} type="date" />
+          <EditableItem label="No Claims (Years)" name="noClaimsDiscount" value={editedData.noClaimsDiscount} onChange={handleInputChange} type="number" />
+          <EditableItem label="Annual Mileage" name="annualMileage" value={editedData.annualMileage} onChange={handleInputChange} type="number" />
         </div>
 
         <div className="flex justify-end space-x-4 mt-6">
@@ -340,13 +355,34 @@ function ResultsModal({
   )
 }
 
-function DataItem({ label, value }: { label: string; value: string | number | undefined }) {
-  if (value === undefined) return null;
+// A new component for editable fields
+function EditableItem({
+  label,
+  name,
+  value,
+  onChange,
+  type = "text",
+}: {
+  label: string
+  name: string
+  value?: string | number
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
+  type?: string
+}) {
+  if (value === undefined || value === null) return null
 
   return (
-    <div className="flex justify-between items-center py-2 border-b border-gray-800 last:border-b-0">
-      <span className="text-gray-400">{label}</span>
-      <span className="font-semibold text-right">{value}</span>
+    <div className="grid grid-cols-3 items-center gap-4">
+      <label htmlFor={name} className="text-sm text-gray-400 text-right">{label}</label>
+      <input
+        id={name}
+        name={name}
+        type={type}
+        value={value}
+        onChange={onChange}
+        className="col-span-2 bg-gray-800 border border-gray-600 text-white rounded-md p-2 focus:ring-2 focus:ring-[#ADFF2F] focus:outline-none"
+        step={type === 'number' ? '0.01' : undefined}
+      />
     </div>
   )
 }
