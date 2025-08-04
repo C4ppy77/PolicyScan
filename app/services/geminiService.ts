@@ -27,6 +27,7 @@ Return the data as a single, minified JSON object and nothing else.
 - renewalDate: The policy renewal date, as a full ISO 8601 string (YYYY-MM-DDTHH:mm:ss.sssZ).
 - noClaimsDiscount: The number of years of no claims discount, as a number.
 - annualMileage: The estimated annual mileage, as a number.
+- policyType: The type of cover, such as 'Comprehensive', 'Third Party, Fire and Theft', or 'Third Party Only'.
 
 Do not add any extra text, explanations, or markdown formatting around the JSON object.
 `;

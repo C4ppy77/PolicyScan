@@ -403,6 +403,7 @@ function ResultsModal({
           <EditableItem label="Renewal Date" name="renewalDate" value={formatDateForInput(editedData.renewalDate)} onChange={handleInputChange} type="date" />
           <EditableItem label="No Claims (Years)" name="noClaimsDiscount" value={editedData.noClaimsDiscount} onChange={handleInputChange} type="number" />
           <EditableItem label="Annual Mileage" name="annualMileage" value={editedData.annualMileage} onChange={handleInputChange} type="number" />
+          <EditableItem label="Policy Type" name="policyType" value={editedData.policyType} onChange={handleInputChange} />
         </div>
 
         <div className="mt-6 grid grid-cols-2 gap-4">

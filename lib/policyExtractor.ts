@@ -29,6 +29,9 @@ export const PolicyDataSchema = z.object({
 
   // Gemini output for 'annual_mileage' -> annualMileage
   annualMileage: z.number().int().positive("Annual mileage must be a positive number").optional(),
+  
+  // Gemini output for 'policy_type' -> policyType
+  policyType: z.string().min(1, "Policy type cannot be empty").optional(),
 });
 
 // The type can be inferred from the schema
