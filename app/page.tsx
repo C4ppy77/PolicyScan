@@ -484,7 +484,7 @@ function AgePickerModal({
         <AgeRangeSelect onValueChange={handleAgeRangeChange} />
 
         <div className="flex justify-end mt-4">
-          <Button onClick={handleConfirm} disabled={!selectedAgeRangeId} className="w-full sm:w-auto bg-[#ADFF2F] text-black hover:bg-[#9AE234] font-bold">
+          <Button onClick={handleConfirm} disabled={!selectedAgeRangeId} className="w-full bg-[#ADFF2F] text-black hover:bg-[#9AE234] font-bold">
             Continue
           </Button>
         </div>
@@ -531,7 +531,7 @@ function RegionPickerModal({
           <Button
             onClick={handleConfirm}
             disabled={!selectedRegionId}
-            className="w-full sm:w-auto bg-[#ADFF2F] text-black hover:bg-[#9AE234] font-bold disabled:bg-gray-600 disabled:text-gray-400"
+            className="w-full bg-[#ADFF2F] text-black hover:bg-[#9AE234] font-bold disabled:bg-gray-600 disabled:text-gray-400"
           >
             See Quotes
           </Button>
