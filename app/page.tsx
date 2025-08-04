@@ -148,9 +148,9 @@ export default function MyPolicyScanLanding() {
           <AgePickerModal
             isOpen={showAgeModal}
             onClose={() => setShowAgeModal(false)}
-            onConfirm={(age) => {
+            onConfirm={(ageRangeId) => {
               console.log("Final Confirmed Data:", confirmedPolicyData)
-              console.log("Policyholder Age:", age)
+              console.log("Policyholder Age Range ID:", ageRangeId)
               setShowAgeModal(false)
               resetState() // Reset the UI completely
             }}
@@ -434,6 +434,8 @@ function EditableItem({
   )
 }
 
+import AgeRangeSelect from "@/components/age-range-select"
+
 function AgePickerModal({
   isOpen,
   onClose,
@@ -441,30 +443,34 @@ function AgePickerModal({
 }: {
   isOpen: boolean
   onClose: () => void
-  onConfirm: (age: number) => void
+  onConfirm: (ageRangeId: number) => void
 }) {
-  const [selectedAge, setSelectedAge] = React.useState<number | null>(null)
+  const [selectedAgeRangeId, setSelectedAgeRangeId] = React.useState<number | null>(null)
 
   const handleConfirm = () => {
-    if (selectedAge) {
-      onConfirm(selectedAge)
+    if (selectedAgeRangeId) {
+      onConfirm(selectedAgeRangeId)
     }
+  }
+
+  const handleAgeRangeChange = (id: string) => {
+    setSelectedAgeRangeId(parseInt(id, 10))
   }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="bg-gray-900 border-gray-700 text-white sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>What is your age?</DialogTitle>
+          <DialogTitle>What is your age range?</DialogTitle>
           <DialogDescription>
-            Please select the age of the main policyholder. This helps us find accurate quotes.
+            Please select the age range of the main policyholder. This helps us find accurate quotes.
           </DialogDescription>
         </DialogHeader>
 
-        <ResponsiveAgePicker selectedAge={selectedAge} onAgeChange={setSelectedAge} />
+        <AgeRangeSelect onValueChange={handleAgeRangeChange} />
 
         <div className="flex justify-end mt-4">
-          <Button onClick={handleConfirm} disabled={!selectedAge} className="w-full sm:w-auto bg-[#ADFF2F] text-black hover:bg-[#9AE234] font-bold">
+          <Button onClick={handleConfirm} disabled={!selectedAgeRangeId} className="w-full sm:w-auto bg-[#ADFF2F] text-black hover:bg-[#9AE234] font-bold">
             Confirm Age & See Quotes
           </Button>
         </div>
@@ -473,54 +479,4 @@ function AgePickerModal({
   )
 }
 
-function ResponsiveAgePicker({ selectedAge, onAgeChange }: { selectedAge: number | null, onAgeChange: (age: number) => void }) {
-  const isMobile = useIsMobile()
-  const ages = Array.from({ length: 85 }, (_, i) => 16 + i) // 16 to 100
 
-  if (isMobile) {
-    return (
-      <Drawer>
-        <DrawerTrigger asChild>
-          <Button variant="outline" className="w-full justify-start text-left font-normal bg-gray-800 border-gray-600">
-            {selectedAge ? `${selectedAge} years old` : "Select your age..."}
-          </Button>
-        </DrawerTrigger>
-        <DrawerContent className="bg-gray-900 text-white border-gray-800">
-          <DrawerHeader>
-            <DrawerTitle>Select Your Age</DrawerTitle>
-            <DrawerDescription>Choose the policyholder's age from the list below.</DrawerDescription>
-          </DrawerHeader>
-          <div className="p-4 overflow-y-auto h-60">
-            <div className="space-y-2">
-              {ages.map((age) => (
-                <Button
-                  key={age}
-                  variant={selectedAge === age ? "default" : "outline"}
-                  className={`w-full ${selectedAge === age ? 'bg-[#ADFF2F] text-black hover:bg-[#9AE234]' : 'bg-gray-800 border-gray-600 hover:bg-gray-700'}`}
-                  onClick={() => onAgeChange(age)}
-                >
-                  {age}
-                </Button>
-              ))}
-            </div>
-          </div>
-        </DrawerContent>
-      </Drawer>
-    )
-  }
-
-  return (
-    <Select onValueChange={(value) => onAgeChange(parseInt(value))}>
-      <SelectTrigger className="w-full bg-gray-800 border-gray-600">
-        <SelectValue placeholder="Select age..." />
-      </SelectTrigger>
-      <SelectContent className="bg-gray-800 text-white">
-        {ages.map((age) => (
-          <SelectItem key={age} value={String(age)}>
-            {age}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  )
-}
