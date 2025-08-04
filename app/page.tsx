@@ -30,6 +30,7 @@ import {
 import { useIsMobile } from "@/components/ui/use-mobile"
 import AgeRangeSelect from "@/components/age-range-select"
 import RegionSelect from "@/components/region-select"
+import PolicyTypeSelect from "@/components/policy-type-select"
 
 export default function MyPolicyScanLanding() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
@@ -364,6 +365,10 @@ function ResultsModal({
     setEditedData(prev => prev ? { ...prev, [name]: isNumber ? parseFloat(value) || 0 : value } : null)
   }
 
+  const handlePolicyTypeChange = (value: string) => {
+    setEditedData(prev => prev ? { ...prev, policyType: value } : null)
+  }
+
   const handleConfirm = () => {
     if (editedData) {
       onConfirm(editedData)
@@ -403,7 +408,13 @@ function ResultsModal({
           <EditableItem label="Renewal Date" name="renewalDate" value={formatDateForInput(editedData.renewalDate)} onChange={handleInputChange} type="date" />
           <EditableItem label="No Claims (Years)" name="noClaimsDiscount" value={editedData.noClaimsDiscount} onChange={handleInputChange} type="number" />
           <EditableItem label="Annual Mileage" name="annualMileage" value={editedData.annualMileage} onChange={handleInputChange} type="number" />
-          <EditableItem label="Policy Type" name="policyType" value={editedData.policyType} onChange={handleInputChange} />
+          <div className="grid grid-cols-3 items-center gap-4">
+            <label htmlFor="policyType" className="text-sm text-gray-400 text-right">Policy Type</label>
+            <PolicyTypeSelect
+              value={editedData.policyType}
+              onValueChange={handlePolicyTypeChange}
+            />
+          </div>
         </div>
 
         <div className="mt-6 grid grid-cols-2 gap-4">
