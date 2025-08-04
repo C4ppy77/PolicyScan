@@ -28,12 +28,16 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer"
 import { useIsMobile } from "@/components/ui/use-mobile"
+import AgeRangeSelect from "@/components/age-range-select"
+import RegionSelect from "@/components/region-select"
 
 export default function MyPolicyScanLanding() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const [showResultsModal, setShowResultsModal] = useState(false)
   const [showAgeModal, setShowAgeModal] = useState(false)
+  const [showRegionModal, setShowRegionModal] = useState(false)
+  const [selectedAgeRangeId, setSelectedAgeRangeId] = useState<number | null>(null)
   const [confirmedPolicyData, setConfirmedPolicyData] = useState<PolicyData | null>(null)
   const [policyData, setPolicyData] = useState<PolicyData | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -89,6 +93,7 @@ export default function MyPolicyScanLanding() {
     setIsProcessing(false)
     setShowResultsModal(false)
     setShowAgeModal(false)
+    setShowRegionModal(false)
     setPolicyData(null)
     setConfirmedPolicyData(null)
     setError(null)
@@ -149,10 +154,21 @@ export default function MyPolicyScanLanding() {
             isOpen={showAgeModal}
             onClose={() => setShowAgeModal(false)}
             onConfirm={(ageRangeId) => {
-              console.log("Final Confirmed Data:", confirmedPolicyData)
-              console.log("Policyholder Age Range ID:", ageRangeId)
+              setSelectedAgeRangeId(ageRangeId)
               setShowAgeModal(false)
-              resetState() // Reset the UI completely
+              setShowRegionModal(true)
+            }}
+          />
+
+          <RegionPickerModal
+            isOpen={showRegionModal}
+            onClose={() => setShowRegionModal(false)}
+            onConfirm={(regionId: string) => {
+              console.log("Final Confirmed Data:", confirmedPolicyData)
+              console.log("Policyholder Age Range ID:", selectedAgeRangeId)
+              console.log("Policyholder Region ID:", regionId)
+              setShowRegionModal(false)
+              resetState()
             }}
           />
         </div>
@@ -434,8 +450,6 @@ function EditableItem({
   )
 }
 
-import AgeRangeSelect from "@/components/age-range-select"
-
 function AgePickerModal({
   isOpen,
   onClose,
@@ -471,7 +485,7 @@ function AgePickerModal({
 
         <div className="flex justify-end mt-4">
           <Button onClick={handleConfirm} disabled={!selectedAgeRangeId} className="w-full sm:w-auto bg-[#ADFF2F] text-black hover:bg-[#9AE234] font-bold">
-            Confirm Age & See Quotes
+            Continue
           </Button>
         </div>
       </DialogContent>
@@ -479,4 +493,50 @@ function AgePickerModal({
   )
 }
 
+function RegionPickerModal({
+  isOpen,
+  onClose,
+  onConfirm,
+}: {
+  isOpen: boolean
+  onClose: () => void
+  onConfirm: (regionId: string) => void
+}) {
+  const [selectedRegionId, setSelectedRegionId] = React.useState<string | null>(null)
 
+  const handleConfirm = () => {
+    if (selectedRegionId) {
+      onConfirm(selectedRegionId)
+    }
+  }
+
+  const handleRegionChange = (id: string) => {
+    console.log("Selected Region ID from component:", id);
+    setSelectedRegionId(id)
+  }
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="bg-gray-900 border-gray-700 text-white sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>What is your region?</DialogTitle>
+          <DialogDescription>
+            Please select your region to help us find accurate quotes.
+          </DialogDescription>
+        </DialogHeader>
+
+        <RegionSelect onValueChange={handleRegionChange} />
+
+        <div className="flex justify-end mt-4">
+          <Button
+            onClick={handleConfirm}
+            disabled={!selectedRegionId}
+            className="w-full sm:w-auto bg-[#ADFF2F] text-black hover:bg-[#9AE234] font-bold disabled:bg-gray-600 disabled:text-gray-400"
+          >
+            See Quotes
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}

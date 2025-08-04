@@ -51,7 +51,7 @@ const AgeRangeSelect = ({ onValueChange }: { onValueChange: (value: string) => v
       <SelectTrigger className="w-full bg-gray-800 border-gray-600">
         <SelectValue placeholder="Select Age Range" />
       </SelectTrigger>
-      <SelectContent className="bg-gray-800 text-white">
+      <SelectContent className="bg-gray-800 text-white" position="popper" side="bottom">
         {ageRanges.map((range) => (
           <SelectItem key={range.id} value={String(range.id)}>
             {range.age_min} – {range.age_max}
