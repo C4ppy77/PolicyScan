@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/select';
 
 interface AgeRange {
-  id: number;
+  id: string; // Changed from number to string to support UUIDs
   age_min: number;
   age_max: number;
 }

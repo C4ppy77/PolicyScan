@@ -54,8 +54,16 @@ export async function getPolicyDataFromImage(imageBuffer: Buffer, mimeType: stri
     const result = await model.generateContent([prompt, imagePart]);
     const responseText = result.response.text();
 
+    // --- Debugging Log ---
+    console.log("Raw response text from Gemini:", responseText);
+    // --- End Debugging Log ---
+
+    // Clean the response text before parsing
+    // This removes markdown backticks and trims whitespace
+    const cleanedText = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+
     // Parse the JSON string returned by the model
-    const parsedJson = JSON.parse(responseText);
+    const parsedJson = JSON.parse(cleanedText);
 
     // Validate the parsed data against our Zod schema
     const validationResult = PolicyDataSchema.safeParse(parsedJson);

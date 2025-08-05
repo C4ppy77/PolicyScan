@@ -38,7 +38,7 @@ export default function MyPolicyScanLanding() {
   const [showResultsModal, setShowResultsModal] = useState(false)
   const [showAgeModal, setShowAgeModal] = useState(false)
   const [showRegionModal, setShowRegionModal] = useState(false)
-  const [selectedAgeRangeId, setSelectedAgeRangeId] = useState<number | null>(null)
+  const [selectedAgeRangeId, setSelectedAgeRangeId] = useState<string | null>(null)
   const [confirmedPolicyData, setConfirmedPolicyData] = useState<PolicyData | null>(null)
   const [policyData, setPolicyData] = useState<PolicyData | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -154,7 +154,7 @@ export default function MyPolicyScanLanding() {
           <AgePickerModal
             isOpen={showAgeModal}
             onClose={() => setShowAgeModal(false)}
-            onConfirm={(ageRangeId) => {
+            onConfirm={(ageRangeId: string) => {
               setSelectedAgeRangeId(ageRangeId)
               setShowAgeModal(false)
               setShowRegionModal(true)
@@ -164,12 +164,51 @@ export default function MyPolicyScanLanding() {
           <RegionPickerModal
             isOpen={showRegionModal}
             onClose={() => setShowRegionModal(false)}
-            onConfirm={(regionId: string) => {
-              console.log("Final Confirmed Data:", confirmedPolicyData)
-              console.log("Policyholder Age Range ID:", selectedAgeRangeId)
-              console.log("Policyholder Region ID:", regionId)
+            onConfirm={async (regionId: string) => {
               setShowRegionModal(false)
-              resetState()
+              setIsProcessing(true)
+
+              // --- Debugging Log ---
+              console.log('Preparing to save scan. Data payload:', {
+                policyData: confirmedPolicyData,
+                ageRangeId: selectedAgeRangeId,
+                regionId: regionId,
+              });
+              // --- End Debugging Log ---
+              
+              try {
+                // Client-side validation
+                if (!confirmedPolicyData || !selectedAgeRangeId || !regionId) {
+                  throw new Error("Cannot save scan. One or more required fields are missing. Please start over.");
+                }
+
+                const response = await fetch('/api/save-scan', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    policyData: confirmedPolicyData,
+                    ageRangeId: selectedAgeRangeId,
+                    regionId: regionId,
+                  }),
+                });
+
+                if (!response.ok) {
+                  const errorData = await response.json();
+                  throw new Error(errorData.error || 'Failed to save the policy scan.');
+                }
+                
+                const result = await response.json();
+                console.log('Scan saved successfully', result);
+                // Ideally, you would redirect to a results page here.
+                // For now, an alert will confirm success.
+                alert('Your policy has been saved!');
+
+              } catch (err: any) {
+                setError(err.message);
+              } finally {
+                setIsProcessing(false)
+                resetState()
+              }
             }}
           />
         </div>
@@ -469,9 +508,9 @@ function AgePickerModal({
 }: {
   isOpen: boolean
   onClose: () => void
-  onConfirm: (ageRangeId: number) => void
+  onConfirm: (ageRangeId: string) => void
 }) {
-  const [selectedAgeRangeId, setSelectedAgeRangeId] = React.useState<number | null>(null)
+  const [selectedAgeRangeId, setSelectedAgeRangeId] = React.useState<string | null>(null)
 
   const handleConfirm = () => {
     if (selectedAgeRangeId) {
@@ -480,7 +519,7 @@ function AgePickerModal({
   }
 
   const handleAgeRangeChange = (id: string) => {
-    setSelectedAgeRangeId(parseInt(id, 10))
+    setSelectedAgeRangeId(id)
   }
 
   return (

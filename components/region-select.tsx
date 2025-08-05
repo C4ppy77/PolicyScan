@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/select';
 
 interface Region {
-  id: number;
+  id: string; // Changed from number to string to support UUIDs
   region: string;
 }
 
