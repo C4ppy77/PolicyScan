@@ -27,26 +27,36 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer"
-import { useIsMobile } from "@/components/ui/use-mobile"
+import { useIsMobile } from "@/hooks/use-mobile"
 import AgeRangeSelect from "@/components/age-range-select"
 import RegionSelect from "@/components/region-select"
 import PolicyTypeSelect from "@/components/policy-type-select"
+import ManualEntryModal from "@/components/ManualEntryModal"
 
 export default function MyPolicyScanLanding() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const [showResultsModal, setShowResultsModal] = useState(false)
+  const [showManualEntryModal, setShowManualEntryModal] = useState(false)
   const [showAgeModal, setShowAgeModal] = useState(false)
   const [showRegionModal, setShowRegionModal] = useState(false)
   const [selectedAgeRangeId, setSelectedAgeRangeId] = useState<string | null>(null)
   const [confirmedPolicyData, setConfirmedPolicyData] = useState<PolicyData | null>(null)
   const [policyData, setPolicyData] = useState<PolicyData | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [showErrorModal, setShowErrorModal] = useState(false)
+
+  const handleManualEntryConfirm = (manualData: PolicyData) => {
+    setConfirmedPolicyData(manualData)
+    setShowManualEntryModal(false)
+    setShowAgeModal(true)
+  }
 
   const handleFileUpload = async (file: File) => {
     setUploadedFile(file)
     setIsProcessing(true)
-    setShowResultsModal(false) // Close modal before new upload
+    setShowResultsModal(false)
+    setShowManualEntryModal(false)
     setError(null)
     setPolicyData(null)
 
@@ -66,9 +76,10 @@ export default function MyPolicyScanLanding() {
 
       const data: PolicyData = await response.json()
       setPolicyData(data)
-      setShowResultsModal(true) // Open the modal on success
+      setShowResultsModal(true)
     } catch (err: any) {
       setError(err.message)
+      setShowErrorModal(true)
     } finally {
       setIsProcessing(false)
     }
@@ -93,11 +104,13 @@ export default function MyPolicyScanLanding() {
     setUploadedFile(null)
     setIsProcessing(false)
     setShowResultsModal(false)
+    setShowManualEntryModal(false)
     setShowAgeModal(false)
     setShowRegionModal(false)
     setPolicyData(null)
     setConfirmedPolicyData(null)
     setError(null)
+    setShowErrorModal(false)
   }
 
   return (
@@ -124,19 +137,44 @@ export default function MyPolicyScanLanding() {
             />
           </div>
 
-          {/* Error Message */}
-          {error && (
-            <div className="mt-4 text-center bg-red-900/20 p-6 rounded-md">
-              <p className="font-bold text-red-400">Analysis Failed</p>
-              <p className="text-sm text-red-400/80 mt-1 mb-4">{error}</p>
-              <Button
-                variant="destructive"
-                onClick={resetState}
-              >
-                Start Over
-              </Button>
-            </div>
-          )}
+          {/* Error Modal */}
+          <Dialog open={showErrorModal} onOpenChange={(open) => !open && resetState()}>
+            <DialogContent className="bg-gray-900 border-gray-700 text-white">
+              <DialogHeader>
+                <DialogTitle className="text-2xl text-center text-red-400">
+                  Unable to Analyze
+                </DialogTitle>
+                <DialogDescription className="text-center">
+                  We couldn't extract the details from your document. Please try again or enter the details manually.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="mt-6 grid grid-cols-2 gap-4">
+                <Button
+                  variant="destructive"
+                  onClick={resetState}
+                  className="w-full"
+                >
+                  Go Back & Try Again
+                </Button>
+                <Button
+                  onClick={() => {
+                    setShowErrorModal(false)
+                    setShowManualEntryModal(true)
+                  }}
+                  className="w-full bg-[#ADFF2F] text-black hover:bg-[#9AE234] font-bold"
+                >
+                  Enter Manually
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Manual Entry Modal */}
+          <ManualEntryModal
+            isOpen={showManualEntryModal}
+            onClose={resetState}
+            onConfirm={handleManualEntryConfirm}
+          />
 
           {/* Results Modal */}
           <ResultsModal
@@ -175,7 +213,7 @@ export default function MyPolicyScanLanding() {
                 regionId: regionId,
               });
               // --- End Debugging Log ---
-              
+
               try {
                 // Client-side validation
                 if (!confirmedPolicyData || !selectedAgeRangeId || !regionId) {
@@ -196,7 +234,7 @@ export default function MyPolicyScanLanding() {
                   const errorData = await response.json();
                   throw new Error(errorData.error || 'Failed to save the policy scan.');
                 }
-                
+
                 const result = await response.json();
                 console.log('Scan saved successfully', result);
                 // Ideally, you would redirect to a results page here.
